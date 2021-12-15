@@ -4,22 +4,49 @@ output:
   html_document:
     keep_md: true
 ---
-
+```{r load libraries}
+library(dplyr)
+library(ggplot2)
+library(vroom)
+```
 
 ## Loading and preprocessing the data
-
+```{r}
+raw <- vroom("activity.zip")
+str(raw)
+```
 
 
 ## What is mean total number of steps taken per day?
+```{r}
+total_steps <- raw %>% group_by(date) %>% summarise(tot_steps = sum(steps, na.rm = TRUE))
+ggplot(total_steps, aes(x=tot_steps)) + geom_histogram(binwidth = 1000)
+mean(total_steps$tot_steps)
+median(total_steps$tot_steps)
+```
 
 
 
 ## What is the average daily activity pattern?
-
+```{r}
+interval_steps <- raw %>% group_by(interval) %>% summarise(int_steps = mean(steps, na.rm = TRUE))
+ggplot(data=interval_steps, aes(x=interval, y=int_steps)) + geom_line()
+interval_steps[which.max(interval_steps$int_steps),]
+```
 
 
 ## Imputing missing values
+```{r}
+raw %>% count(is.na(steps))
+raw %>% count(imputed)
+raw$imputed <- is.na(raw$steps)
 
+tmp <- raw[c(raw$imputed),]
+tmp$iv <- interval_steps[which(tmp$interval == interval_steps$interval)]
+
+
+raw[c(raw$imputed),]$steps <- interval_steps[raw[c(raw$imputed),]$interval == interval_steps$interval,]$int_steps
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?

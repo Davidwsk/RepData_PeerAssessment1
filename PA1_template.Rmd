@@ -38,15 +38,25 @@ interval_steps[which.max(interval_steps$int_steps),]
 ## Imputing missing values
 ```{r}
 raw %>% count(is.na(steps))
-raw %>% count(imputed)
-raw$imputed <- is.na(raw$steps)
 
-tmp <- raw[c(raw$imputed),]
-tmp$iv <- interval_steps[which(tmp$interval == interval_steps$interval)]
+imputed_data <- as.data.frame(raw)
+imputed_data$imputed <- is.na(imputed_data$steps)
 
+tmp <- imputed_data[c(imputed_data$imputed),] %>% left_join(interval_steps, by="interval")
 
-raw[c(raw$imputed),]$steps <- interval_steps[raw[c(raw$imputed),]$interval == interval_steps$interval,]$int_steps
+imputed_data[c(imputed_data$imputed),]$steps <- tmp$int_steps
+imputed_data %>% count(is.na(steps))
+
+total_steps2 <- imputed_data %>% group_by(date) %>% summarise(tot_steps = sum(steps, na.rm = TRUE))
+ggplot(total_steps2, aes(x=tot_steps)) + geom_histogram(binwidth = 1000)
+mean(total_steps2$tot_steps)
+median(total_steps2$tot_steps)
 ```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+imputed_data$weekdays
+interval_steps <- imputed_data %>% group_by(interval) %>% summarise(int_steps = mean(steps, na.rm = TRUE))
+ggplot(data=interval_steps, aes(x=interval, y=int_steps)) + geom_line()
+```

@@ -7,6 +7,7 @@ output:
 ```{r load libraries}
 library(dplyr)
 library(ggplot2)
+library(lattice)
 library(vroom)
 ```
 
@@ -56,7 +57,20 @@ median(total_steps2$tot_steps)
 
 ## Are there differences in activity patterns between weekdays and weekends?
 ```{r}
-imputed_data$weekdays
-interval_steps <- imputed_data %>% group_by(interval) %>% summarise(int_steps = mean(steps, na.rm = TRUE))
-ggplot(data=interval_steps, aes(x=interval, y=int_steps)) + geom_line()
+imputed_data$weekdays <- weekdays(imputed_data$date, TRUE)
+imputed_data$weekends <- factor(ifelse(imputed_data$weekdays %in% c("Sat", "Sun"), "weekend", "weekday"),
+                                   levels = c("weekend", "weekday"))
+
+interval_steps2 <- imputed_data %>% group_by(interval, weekends) %>% summarise(int_steps = mean(steps, na.rm = TRUE))
+
+
+```
+```{r}
+ggplot(data=interval_steps2, aes(x=interval, y=int_steps)) +
+  geom_line(col="blue") +
+  xlab('Interval') + ylab('Number of steps') +
+  facet_wrap(weekends ~ ., ncol = 1)
+```
+```{r}
+xyplot(int_steps ~ interval|weekends , interval_steps2, type="l")
 ```
